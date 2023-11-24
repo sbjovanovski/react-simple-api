@@ -1,14 +1,14 @@
 class ApiCache<T> {
-  private apiResponses: Map<Response, T> = new Map()
+    private apiResponses: Map<string, T> = new Map()
 
-  getCachedResponse(response: Response): T | undefined {
-    return this.apiResponses.get(response)
-  }
+    getCachedResponse(id: string): T | undefined {
+        return this.apiResponses.get(id)
+    }
 
-  setCachedResponse(response: Response, data: T): T {
-    this.apiResponses.set(response, data)
-    return data
-  }
+    setCachedResponse(id: string, data: T): T {
+        this.apiResponses.set(id, data)
+        return data
+    }
 }
 
-export { ApiCache }
+export {ApiCache}
