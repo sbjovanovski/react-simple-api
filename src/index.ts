@@ -4,10 +4,19 @@ import { useApiContext, ApiContextProvider } from './CacheContext'
 /*
 Usage:
 GET
-const {data, isLoading, isError, error} = useApi<ResponseType, BodyType>('https://api.example.com', Method.GET)
+const {data, isLoading, isError, error} = useApi<ResponseType, PostDataType>({
+    apiId: 'some-api'
+    apiUrl: 'https://api.example.com',
+    method: Method.GET
+})
 
 POST, PUT, PATCH
-const {data, isLoading, isError, error} = useApi<ResponseType, BodyType>('https://api.example.com', Method.POST, {firstName: "Test"})
+const {data, isLoading, isError, error} = useApi<ResponseType, PostDataType>({
+    apiId: 'some-api'
+    apiUrl: 'https://api.example.com',
+    method: Method.POST,
+    data: {firstName: "Test"}
+})
  */
 
 enum Method {
@@ -22,59 +31,111 @@ interface UseApiResponse<T> {
   data: T | undefined
   isLoading: boolean
   isError: boolean
+  isRetrying: boolean
   error: Error | null
 }
 
-const useApi = <TResponse, TData>(
-  apiId: string,
-  apiUrl: string,
-  method: Method,
-  data?: TData,
-  headers?: HeadersInit,
-): UseApiResponse<TResponse> => {
+interface UseApiParams<TData> {
+  apiId: string
+  apiUrl: string
+  method: Method
+  data?: TData
+  headers?: Headers
+  cacheExpiry?: number
+  retry?: number
+}
+
+const useApi = <TResponse, TData>({
+  apiId,
+  apiUrl,
+  method,
+  data,
+  headers,
+  cacheExpiry,
+  retry,
+}: UseApiParams<TData>): UseApiResponse<TResponse> => {
   const { getCache, setCache } = useApiContext()
+  let retryTimes: number = retry || 0
 
   const [state, setState] = useState<UseApiResponse<TResponse>>({
     data: undefined,
     error: null,
     isError: false,
     isLoading: true,
+    isRetrying: false,
   })
 
   apiId = apiId || JSON.stringify({ apiUrl, method, data })
 
-  const triggerAPI = async () => {
+  const cachedVsNewData = (cachedData: TResponse, response: Response): void => {
+    response.json().then((newData: TResponse): void => {
+      const cachedStringify: string = JSON.stringify(cachedData)
+      const newDataStringify: string = JSON.stringify(newData)
+      if (cachedStringify !== newDataStringify) {
+        setState({
+          data: newData,
+          error: null,
+          isError: false,
+          isLoading: false,
+          isRetrying: false,
+        })
+      }
+    })
+  }
+
+  const triggerAPI = async (): Promise<void> => {
     try {
-      const response = await fetch(apiUrl, {
-        method,
-        body: JSON.stringify(data),
-        headers,
-      })
-      const cachedResponse = getCache<TResponse>(apiId)
+      const cachedResponse: TResponse = getCache<TResponse>(apiId)
       if (cachedResponse) {
         setState({
           data: cachedResponse,
           error: null,
           isError: false,
           isLoading: false,
+          isRetrying: false,
         })
+        const response: Response = await fetch(apiUrl, {
+          method,
+          body: JSON.stringify(data),
+          headers,
+        })
+        cachedVsNewData(cachedResponse, response)
       } else {
+        const response: Response = await fetch(apiUrl, {
+          method,
+          body: JSON.stringify(data),
+          headers,
+        })
         const responseData = await response.json()
         setState({
           data: responseData,
           error: null,
           isError: false,
           isLoading: false,
+          isRetrying: false,
         })
-        setCache<TResponse>(apiId, responseData)
+        setCache<TResponse>(apiId, responseData, cacheExpiry)
       }
     } catch (error: unknown) {
-      setState({
-        data: undefined,
-        error: error as Error,
-        isLoading: false,
-        isError: true,
-      })
+      if (retryTimes && retryTimes > 0) {
+        retryTimes--
+        setState({
+          data: undefined,
+          error: null,
+          isError: false,
+          isLoading: true,
+          isRetrying: true,
+        })
+        triggerAPI()
+      } else {
+        setState({
+          data: undefined,
+          error: error as Error,
+          isLoading: false,
+          isError: true,
+          isRetrying: false,
+        })
+      }
     }
   }
 
@@ -86,4 +147,4 @@ const useApi = <TResponse, TData>(
   return state
 }
 
-export { useApi, Method, ApiContextProvider }
+export { useApi, Method, ApiContextProvider, UseApiParams }

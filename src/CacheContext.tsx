@@ -1,21 +1,23 @@
-import React, { createContext, ReactNode, useContext } from 'react'
+import React, { Context, createContext, ReactNode, useContext } from 'react'
 import { ApiCache } from './cache'
 
 interface ApiCacheContextData {
   getCache<T>(id: string): T
-  setCache<T>(id: string, data: T): T
+
+  setCache<T>(id: string, data: T, cacheExpiry?: number): T
 }
 
-const ApiCacheContext = createContext<ApiCacheContextData>({
-  getCache: (_id: string): any => _id,
-  setCache: (_id: string, data: any) => data,
+const ApiCacheContext: Context<ApiCacheContextData> = createContext<ApiCacheContextData>({
+  getCache: (id: string): any => id,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  setCache: (_id: string, data: any, _cacheExpiry?: number) => data,
 })
 
 const ApiContextProvider = ({ children }: { children: ReactNode }) => {
   const cache = new ApiCache()
 
-  const handleSetCache = (id: string, data: any) => {
-    cache.setCachedResponse(id, data)
+  const handleSetCache = (id: string, data: any, cacheExpiry?: number) => {
+    cache.setCachedResponse(id, data, cacheExpiry)
     return data
   }
 
