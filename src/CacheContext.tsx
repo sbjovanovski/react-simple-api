@@ -1,35 +1,35 @@
-import React, {createContext, ReactNode, useContext} from "react";
-import {ApiCache} from './cache'
+import React, { createContext, ReactNode, useContext } from 'react'
+import { ApiCache } from './cache'
 
 interface ApiCacheContextData {
-    getCache: <T extends any>(id: string) => T
-    setCache: <T extends any>(id: string, data: T) => T
+  getCache<T>(id: string): T
+  setCache<T>(id: string, data: T): T
 }
 
 const ApiCacheContext = createContext<ApiCacheContextData>({
-    getCache: <T extends any>(_id: string): T => ({} as T),
-    setCache: <T extends any>(_id: string, data: T): T => data
+  getCache: (_id: string): any => _id,
+  setCache: (_id: string, data: any) => data,
 })
 
-const ApiContextProvider = ({children}: { children: ReactNode }) => {
-    const cache = new ApiCache()
+const ApiContextProvider = ({ children }: { children: ReactNode }) => {
+  const cache = new ApiCache()
 
-    const handleSetCache = <T extends any>(id: string, data: T): T => {
-        cache.setCachedResponse(id, data)
-        return data
-    }
+  const handleSetCache = (id: string, data: any) => {
+    cache.setCachedResponse(id, data)
+    return data
+  }
 
-    const handleGetCache = <T extends any>(id: string): T => {
-        return cache.getCachedResponse(id) as T
-    }
+  const handleGetCache = (id: string) => {
+    return cache.getCachedResponse(id) as any
+  }
 
-    return (
-        <ApiCacheContext.Provider value={{getCache: handleGetCache, setCache: handleSetCache}}>
-            {children}
-        </ApiCacheContext.Provider>
-    )
+  return (
+    <ApiCacheContext.Provider value={{ getCache: handleGetCache, setCache: handleSetCache }}>
+      {children}
+    </ApiCacheContext.Provider>
+  )
 }
 
 const useApiContext = () => useContext(ApiCacheContext)
 
-export {ApiContextProvider, ApiCacheContext, useApiContext}
+export { ApiContextProvider, ApiCacheContext, useApiContext }
