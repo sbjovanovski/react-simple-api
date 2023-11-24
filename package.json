@@ -1,6 +1,6 @@
 {
-  "name": "react-api",
-  "version": "1.0.0",
+  "name": "react-simple-api",
+  "version": "1.0.1",
   "description": "Create and cache API requests and responses",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -28,7 +28,7 @@
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sbjovanovski/react-api"
+    "url": "git+https://github.com/sbjovanovski/react-api.git"
   },
   "peerDependencies": {
     "react": ">=16"
