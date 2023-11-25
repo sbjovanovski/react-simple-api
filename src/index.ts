@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useApiContext, ApiContextProvider } from './CacheContext'
-import { areObjectsEqual, generateIdentifier, generateRequestHeaders } from './utils'
+import { areObjectsEqual, generateRequestHeaders } from './utils'
 
 /*
 Usage:
@@ -37,7 +37,7 @@ interface UseApiResponse<T> {
 }
 
 interface UseApiParams<TData> {
-  apiId: string | string[]
+  apiId: string
   apiUrl: string
   method: Method
   data?: TData
@@ -66,7 +66,7 @@ const useApi = <TResponse, TData>({
     isRetrying: false,
   })
 
-  const apiIdentifier: string = generateIdentifier(apiId || JSON.stringify({ apiUrl, method, data }))
+  const apiIdentifier: string = apiId || JSON.stringify({ apiUrl, method, data })
 
   const requestHeaders = generateRequestHeaders(headers)
 
