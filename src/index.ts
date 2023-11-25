@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useApiContext, ApiContextProvider } from './CacheContext'
-import { areObjectsEqual, generateIdentifier } from './utils'
+import { areObjectsEqual, generateIdentifier, generateRequestHeaders } from './utils'
 
 /*
 Usage:
@@ -41,7 +41,7 @@ interface UseApiParams<TData> {
   apiUrl: string
   method: Method
   data?: TData
-  headers?: Headers
+  headers?: Record<string, string>
   cacheExpiry?: number
   retry?: number
 }
@@ -67,6 +67,8 @@ const useApi = <TResponse, TData>({
   })
 
   const apiIdentifier: string = generateIdentifier(apiId || JSON.stringify({ apiUrl, method, data }))
+
+  const requestHeaders = generateRequestHeaders(headers)
 
   const cachedVsNewData = (cachedData: TResponse, response: Response): void => {
     response.json().then((newData: TResponse): void => {
@@ -96,7 +98,7 @@ const useApi = <TResponse, TData>({
         const response: Response = await fetch(apiUrl, {
           method,
           body: JSON.stringify(data),
-          headers,
+          headers: requestHeaders,
         })
         cachedVsNewData(cachedResponse, response)
       } else {

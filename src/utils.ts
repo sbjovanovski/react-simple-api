@@ -12,4 +12,11 @@ const areObjectsEqual = <T>(obj1: T, obj2: T): boolean => {
   return stringObj1 === stringObj2
 }
 
-export { areObjectsEqual, generateIdentifier }
+const generateRequestHeaders = (headers?: Record<string, string>) => {
+  return new Headers({
+    'Content-Type': 'application/json',
+    ...(headers || {}),
+  })
+}
+
+export { areObjectsEqual, generateIdentifier, generateRequestHeaders }
