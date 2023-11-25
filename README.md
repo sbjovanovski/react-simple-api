@@ -72,7 +72,7 @@ useApi = <TResponse, TData>({
   apiUrl: string,
   method: Method,
   data?: TData,
-  headers?: Headers
+  headers?: Record<string, string>
   cacheExpiry?: number // cache expiry in milliseconds
   retry?: number // the number of times to retry before it throws an error
 }) => ({
