@@ -7,7 +7,7 @@ const areObjectsEqual = <T>(obj1: T, obj2: T): boolean => {
 
 const generateRequestHeaders = (headers?: Record<string, string>) => {
   return new Headers({
-    'content-Type': 'application/json',
+    'content-type': 'application/json',
     ...(headers || {}),
   })
 }

@@ -68,7 +68,7 @@ enum Method {
 }
 
 useApi = <TResponse, TData>({
-  apiId: string | string[] // cache identifier,
+  apiId: string // cache identifier,
   apiUrl: string,
   method: Method,
   data?: TData,
