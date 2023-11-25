@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useApiContext, ApiContextProvider } from './CacheContext'
+import { areObjectsEqual, generateIdentifier } from './utils'
 
 /*
 Usage:
@@ -36,7 +37,7 @@ interface UseApiResponse<T> {
 }
 
 interface UseApiParams<TData> {
-  apiId: string
+  apiId: string | string[]
   apiUrl: string
   method: Method
   data?: TData
@@ -65,13 +66,11 @@ const useApi = <TResponse, TData>({
     isRetrying: false,
   })
 
-  apiId = apiId || JSON.stringify({ apiUrl, method, data })
+  const apiIdentifier: string = generateIdentifier(apiId || JSON.stringify({ apiUrl, method, data }))
 
   const cachedVsNewData = (cachedData: TResponse, response: Response): void => {
     response.json().then((newData: TResponse): void => {
-      const cachedStringify: string = JSON.stringify(cachedData)
-      const newDataStringify: string = JSON.stringify(newData)
-      if (cachedStringify !== newDataStringify) {
+      if (!areObjectsEqual<TResponse>(cachedData, newData)) {
         setState({
           data: newData,
           error: null,
@@ -85,7 +84,7 @@ const useApi = <TResponse, TData>({
 
   const triggerAPI = async (): Promise<void> => {
     try {
-      const cachedResponse: TResponse = getCache<TResponse>(apiId)
+      const cachedResponse: TResponse = getCache<TResponse>(apiIdentifier)
       if (cachedResponse) {
         setState({
           data: cachedResponse,
@@ -114,7 +113,7 @@ const useApi = <TResponse, TData>({
           isLoading: false,
           isRetrying: false,
         })
-        setCache<TResponse>(apiId, responseData, cacheExpiry)
+        setCache<TResponse>(apiIdentifier, responseData, cacheExpiry)
       }
     } catch (error: unknown) {
       if (retryTimes && retryTimes > 0) {
@@ -140,6 +139,13 @@ const useApi = <TResponse, TData>({
   }
 
   useEffect(() => {
+    setState({
+      data: undefined,
+      error: null,
+      isError: false,
+      isLoading: true,
+      isRetrying: false,
+    })
     triggerAPI()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiId])
