@@ -5,11 +5,13 @@ const areObjectsEqual = <T>(obj1: T, obj2: T): boolean => {
   return stringObj1 === stringObj2
 }
 
-const generateRequestHeaders = (headers?: Record<string, string>) => {
-  return new Headers({
-    'content-type': 'application/json',
-    ...(headers || {}),
+const createRequest = async (apiUrl: string, requestInfo: RequestInit | undefined): Promise<Response> =>
+  await fetch(apiUrl, {
+    ...requestInfo,
+    headers: new Headers({
+      'content-type': 'application/json',
+      ...requestInfo?.headers,
+    }),
   })
-}
 
-export { areObjectsEqual, generateRequestHeaders }
+export { areObjectsEqual, createRequest }
