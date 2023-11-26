@@ -1,29 +1,25 @@
 import { useState } from 'react'
 import { UseApiResponse, UseApiParams } from './types'
-import { areObjectsEqual, createRequest } from './utils'
-import { useApiContext } from './CacheContext'
+import { createRequest } from './utils'
 
-interface UseMutateApiResponse<T> extends UseApiResponse<T> {
+interface UseMutateApiResponse<TResponse, TError> extends UseApiResponse<TResponse, TError> {
   mutate: <TData>(data: TData) => Promise<void>
 }
 
-interface UseMutationApiParams<TResponse> extends Omit<UseApiParams<any>, 'data'> {
-  onSuccess: (response: TResponse) => void
+interface UseMutationApiParams<TResponse> extends Omit<UseApiParams<any>, 'data' | 'apiId' | 'cacheExpiry'> {
+  onSuccess?: (response: TResponse) => void
 }
 
-const useMutateApi = <TResponse>({
-  apiId,
+const useMutateApi = <TResponse, TError = void>({
   apiUrl,
   headers,
   method,
-  cacheExpiry,
   retry,
   onSuccess,
-}: UseMutationApiParams<TResponse>): UseMutateApiResponse<TResponse> => {
-  const { getCache, setCache } = useApiContext()
+}: UseMutationApiParams<TResponse>): UseMutateApiResponse<TResponse, TError> => {
   let retryTimes: number = retry || 0
 
-  const [state, setState] = useState<UseApiResponse<TResponse>>({
+  const [state, setState] = useState<UseApiResponse<TResponse, TError>>({
     data: undefined,
     error: null,
     isError: false,
@@ -31,62 +27,28 @@ const useMutateApi = <TResponse>({
     isRetrying: false,
   })
 
-  const apiIdentifier: string = apiId || JSON.stringify({ apiUrl, method })
-
-  const cachedVsNewData = (
-    cachedData: TResponse,
-    response: Response,
-    onSuccess: (responseData: TResponse) => void,
-  ): void => {
-    response.json().then((newData: TResponse): void => {
-      if (!areObjectsEqual<TResponse>(cachedData, newData)) {
-        setState({
-          data: newData,
-          error: null,
-          isError: false,
-          isLoading: false,
-          isRetrying: false,
-        })
-        onSuccess(newData)
-      }
-    })
-  }
-
   const mutate = async <TData>(data: TData): Promise<void> => {
+    setState(
+      (prevState: UseApiResponse<TResponse, TError>): UseApiResponse<TResponse, TError> => ({
+        ...prevState,
+        isLoading: true,
+      }),
+    )
     try {
-      const cachedResponse: TResponse = getCache<TResponse>(apiIdentifier)
-      if (cachedResponse) {
-        setState({
-          data: cachedResponse,
-          error: null,
-          isError: false,
-          isLoading: false,
-          isRetrying: false,
-        })
-        onSuccess(cachedResponse)
-        const response: Response = await createRequest(apiUrl, {
-          method,
-          body: JSON.stringify(data),
-          headers,
-        })
-        cachedVsNewData(cachedResponse, response, onSuccess)
-      } else {
-        const response: Response = await createRequest(apiUrl, {
-          method,
-          body: JSON.stringify(data),
-          headers,
-        })
-        const responseData = await response.json()
-        setState({
-          data: responseData,
-          error: null,
-          isError: false,
-          isLoading: false,
-          isRetrying: false,
-        })
-        setCache<TResponse>(apiIdentifier, responseData, cacheExpiry)
-        onSuccess(responseData)
-      }
+      const response: Response = await createRequest(apiUrl, {
+        method,
+        body: JSON.stringify(data),
+        headers,
+      })
+      const responseData = await response.json()
+      onSuccess?.(responseData)
+      setState({
+        data: responseData,
+        error: null,
+        isError: false,
+        isLoading: false,
+        isRetrying: false,
+      })
     } catch (error: unknown) {
       if (retryTimes && retryTimes > 0) {
         retryTimes--
@@ -101,7 +63,7 @@ const useMutateApi = <TResponse>({
       } else {
         setState({
           data: undefined,
-          error: error as Error,
+          error: error as TError,
           isLoading: false,
           isError: true,
           isRetrying: false,

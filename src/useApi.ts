@@ -21,7 +21,7 @@ const {data, isLoading, isError, error} = useApi<ResponseType, PostDataType>({
 })
  */
 
-const useApi = <TResponse, TData>({
+const useApi = <TResponse, TData, TError = void>({
   apiId,
   apiUrl,
   method,
@@ -29,11 +29,11 @@ const useApi = <TResponse, TData>({
   headers = {},
   cacheExpiry,
   retry,
-}: UseApiParams<TData>): UseApiResponse<TResponse> => {
+}: UseApiParams<TData>): UseApiResponse<TResponse, TError> => {
   const { getCache, setCache } = useApiContext()
   let retryTimes: number = retry || 0
 
-  const [state, setState] = useState<UseApiResponse<TResponse>>({
+  const [state, setState] = useState<UseApiResponse<TResponse, TError>>({
     data: undefined,
     error: null,
     isError: false,
@@ -104,7 +104,7 @@ const useApi = <TResponse, TData>({
       } else {
         setState({
           data: undefined,
-          error: error as Error,
+          error: error as TError,
           isLoading: false,
           isError: true,
           isRetrying: false,

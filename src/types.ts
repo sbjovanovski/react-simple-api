@@ -6,12 +6,12 @@ enum APIMethod {
   DELETE = 'DELETE',
 }
 
-interface UseApiResponse<T> {
+interface UseApiResponse<T, TError = void> {
   data: T | undefined
   isLoading: boolean
   isError: boolean
   isRetrying: boolean
-  error: Error | null
+  error: TError | null
 }
 
 interface UseApiParams<TData> {
