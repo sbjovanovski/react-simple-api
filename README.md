@@ -35,7 +35,7 @@ ReactDOM.render(
 Query data
 
 ```
-import { useApi, Method } from 'react-simple-api'
+import { useApi, APIMethod } from 'react-simple-api'
 
 interface Cat {
     type: string
@@ -51,7 +51,7 @@ const {
     } = useApi<Cat[], {}>({
         apiId: 'cat-api', 
         apiUrl: 'https://cat-fact.herokuapp.com/facts', 
-        method: Method.GET,
+        method: APIMethod.GET,
         retry: 4
     })
 ```
@@ -59,7 +59,7 @@ const {
 ### Types
 
 ```
-enum Method {
+enum APIMethod {
   GET = 'GET',
   POST = 'POST',
   PUT = 'PUT',
@@ -70,7 +70,7 @@ enum Method {
 useApi = <TResponse, TData>({
   apiId: string // cache identifier,
   apiUrl: string,
-  method: Method,
+  method: APIMethod,
   data?: TData,
   headers?: Record<string, string>
   cacheExpiry?: number // cache expiry in milliseconds

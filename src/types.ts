@@ -1,4 +1,5 @@
-enum Method {
+enum APIMethod {
+  GET = 'GET',
   POST = 'POST',
   PUT = 'PUT',
   PATCH = 'PATCH',
@@ -16,11 +17,11 @@ interface UseApiResponse<T> {
 interface UseApiParams<TData> {
   apiId: string
   apiUrl: string
-  method: Method
+  method: APIMethod
   data?: TData
   headers?: Record<string, string>
   cacheExpiry?: number
   retry?: number
 }
 
-export { Method, UseApiResponse, UseApiParams }
+export { APIMethod, UseApiResponse, UseApiParams }
