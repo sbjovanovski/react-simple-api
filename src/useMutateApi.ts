@@ -1,22 +1,22 @@
 import { useState } from 'react'
 import { UseApiResponse, UseApiParams } from './types'
-import { createRequest } from './utils'
+import { createRequest, normalizeError } from './utils'
 
-interface UseMutateApiResponse<TResponse, TError> extends UseApiResponse<TResponse, TError> {
-  mutate: <TData>(data: TData) => Promise<void>
+interface UseMutateApiResponse<TResponse, TData, TError> extends UseApiResponse<TResponse, TError> {
+  mutate: (data: TData) => Promise<void>
 }
 
 interface UseMutationApiParams<TResponse> extends Omit<UseApiParams<any>, 'data' | 'apiId' | 'cacheExpiry'> {
   onSuccess?: (response: TResponse) => void
 }
 
-const useMutateApi = <TResponse, TError = void>({
+const useMutateApi = <TResponse, TData = void, TError = void>({
   apiUrl,
   headers,
   method,
   retry,
   onSuccess,
-}: UseMutationApiParams<TResponse>): UseMutateApiResponse<TResponse, TError> => {
+}: UseMutationApiParams<TResponse>): UseMutateApiResponse<TResponse, TData, TError> => {
   let retryTimes: number = retry || 0
 
   const [state, setState] = useState<UseApiResponse<TResponse, TError>>({
@@ -27,7 +27,7 @@ const useMutateApi = <TResponse, TError = void>({
     isRetrying: false,
   })
 
-  const mutate = async <TData>(data: TData): Promise<void> => {
+  const mutate = async (data: TData): Promise<void> => {
     setState(
       (prevState: UseApiResponse<TResponse, TError>): UseApiResponse<TResponse, TError> => ({
         ...prevState,
@@ -41,14 +41,18 @@ const useMutateApi = <TResponse, TError = void>({
         headers,
       })
       const responseData = await response.json()
-      onSuccess?.(responseData)
-      setState({
-        data: responseData,
-        error: null,
-        isError: false,
-        isLoading: false,
-        isRetrying: false,
-      })
+      if (!response.ok) {
+        throw responseData
+      } else {
+        onSuccess?.(responseData)
+        setState({
+          data: responseData,
+          error: null,
+          isError: false,
+          isLoading: false,
+          isRetrying: false,
+        })
+      }
     } catch (error: unknown) {
       if (retryTimes && retryTimes > 0) {
         retryTimes--
@@ -59,11 +63,12 @@ const useMutateApi = <TResponse, TError = void>({
           isLoading: true,
           isRetrying: true,
         })
-        mutate<TData>(data)
+        mutate(data)
       } else {
+        const normalError = normalizeError(error)
         setState({
           data: undefined,
-          error: error as TError,
+          error: normalError as TError,
           isLoading: false,
           isError: true,
           isRetrying: false,

@@ -14,4 +14,11 @@ const createRequest = async (apiUrl: string, requestInfo: RequestInit | undefine
     }),
   })
 
-export { areObjectsEqual, createRequest }
+const normalizeError = (error: any) => {
+  if (error?.response) {
+    return error?.response?.data?.errors || error?.response?.data || error?.response
+  }
+  return error
+}
+
+export { areObjectsEqual, createRequest, normalizeError }
