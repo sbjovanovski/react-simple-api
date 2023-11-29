@@ -24,6 +24,7 @@ interface UseApiParams<TResponse, TData, TError> {
   retry?: number
   onSuccess?: (response: TResponse) => void
   onError?: (error: TError) => void
+  pollInterval?: number
 }
 
 export { APIMethod, UseApiResponse, UseApiParams }

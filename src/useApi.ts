@@ -21,6 +21,8 @@ const {data, isLoading, isError, error} = useApi<ResponseType, PostDataType>({
 })
  */
 
+let interval: ReturnType<typeof setInterval>
+
 const useApi = <TResponse, TData = void, TError = void>({
   apiId,
   apiUrl,
@@ -31,6 +33,7 @@ const useApi = <TResponse, TData = void, TError = void>({
   retry,
   onSuccess,
   onError,
+  pollInterval,
 }: UseApiParams<TResponse, TData, TError>): UseApiResponse<TResponse, TError> => {
   const { getCache, setCache } = useApiContext()
   let retryTimes: number = retry || 0
@@ -148,8 +151,16 @@ const useApi = <TResponse, TData = void, TError = void>({
       isRetrying: false,
     })
     triggerAPI()
+
+    if (pollInterval) {
+      interval = setInterval(triggerAPI, pollInterval)
+    }
+
+    return () => {
+      clearInterval(interval)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiId])
+  }, [apiId, pollInterval])
 
   return state
 }
