@@ -59,6 +59,7 @@ const useApi = <TResponse, TData = void, TError = void>({
         isLoading: false,
         isRetrying: false,
       })
+      setCache<TResponse>(apiId, newResponse, cacheExpiry)
     }
   }
 
@@ -66,6 +67,7 @@ const useApi = <TResponse, TData = void, TError = void>({
     try {
       const cachedResponse: TResponse = getCache<TResponse>(apiIdentifier)
       if (cachedResponse) {
+        // return the cached response immediately
         setState({
           data: cachedResponse,
           error: null,
@@ -73,6 +75,8 @@ const useApi = <TResponse, TData = void, TError = void>({
           isLoading: false,
           isRetrying: false,
         })
+
+        // get the new data from the API
         const response: Response = await createRequest(apiUrl, {
           method,
           body: JSON.stringify(data),
@@ -82,9 +86,13 @@ const useApi = <TResponse, TData = void, TError = void>({
         if (!response.ok) {
           throw responseData
         } else {
+          // compare the old cached data vs the new data
+          // if the new data is different from the cached data
+          // update the cache with the new data and return the new data
           cachedVsNewData(cachedResponse, responseData, onSuccess)
         }
       } else {
+        // if cached data doesn't exist, get new data from the API
         const response: Response = await createRequest(apiUrl, {
           method,
           body: JSON.stringify(data),
@@ -94,6 +102,7 @@ const useApi = <TResponse, TData = void, TError = void>({
         if (!response.ok) {
           throw responseData
         } else {
+          // add the data in the cache and return it
           setState({
             data: responseData,
             error: null,
@@ -105,6 +114,7 @@ const useApi = <TResponse, TData = void, TError = void>({
         }
       }
     } catch (error: unknown | TError) {
+      // if retry is specified, trigger the API call again, until retryTimes is 0
       if (retryTimes && retryTimes > 0) {
         retryTimes--
         setState({
