@@ -6,9 +6,8 @@ interface UseMutateApiResponse<TResponse, TData, TError> extends UseApiResponse<
   mutate: (data: TData) => Promise<void>
 }
 
-interface UseMutationApiParams<TResponse> extends Omit<UseApiParams<any>, 'data' | 'apiId' | 'cacheExpiry'> {
-  onSuccess?: (response: TResponse) => void
-}
+interface UseMutationApiParams<TResponse, TData, TError>
+  extends Omit<UseApiParams<TResponse, TData, TError>, 'data' | 'apiId' | 'cacheExpiry'> {}
 
 const useMutateApi = <TResponse, TData = void, TError = void>({
   apiUrl,
@@ -16,7 +15,8 @@ const useMutateApi = <TResponse, TData = void, TError = void>({
   method,
   retry,
   onSuccess,
-}: UseMutationApiParams<TResponse>): UseMutateApiResponse<TResponse, TData, TError> => {
+  onError,
+}: UseMutationApiParams<TResponse, TData, TError>): UseMutateApiResponse<TResponse, TData, TError> => {
   let retryTimes: number = retry || 0
 
   const [state, setState] = useState<UseApiResponse<TResponse, TError>>({
@@ -53,7 +53,7 @@ const useMutateApi = <TResponse, TData = void, TError = void>({
           isRetrying: false,
         })
       }
-    } catch (error: unknown) {
+    } catch (error: unknown | TError) {
       if (retryTimes && retryTimes > 0) {
         retryTimes--
         setState({
@@ -66,9 +66,10 @@ const useMutateApi = <TResponse, TData = void, TError = void>({
         mutate(data)
       } else {
         const normalError = normalizeError(error)
+        onError?.(normalError)
         setState({
           data: undefined,
-          error: normalError as TError,
+          error: normalError,
           isLoading: false,
           isError: true,
           isRetrying: false,

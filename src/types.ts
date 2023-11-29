@@ -14,7 +14,7 @@ interface UseApiResponse<T, TError = void> {
   error: TError | null
 }
 
-interface UseApiParams<TData> {
+interface UseApiParams<TResponse, TData, TError> {
   apiId: string
   apiUrl: string
   method: APIMethod
@@ -22,6 +22,8 @@ interface UseApiParams<TData> {
   headers?: Record<string, string>
   cacheExpiry?: number
   retry?: number
+  onSuccess?: (response: TResponse) => void
+  onError?: (error: TError) => void
 }
 
 export { APIMethod, UseApiResponse, UseApiParams }
