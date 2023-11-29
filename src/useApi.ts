@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useApiContext } from './CacheContext'
-import { areObjectsEqual, createRequest } from './utils'
+import { areObjectsEqual, createRequest, normalizeError } from './utils'
 import { UseApiResponse, UseApiParams } from './types'
 
 /*
@@ -21,7 +21,7 @@ const {data, isLoading, isError, error} = useApi<ResponseType, PostDataType>({
 })
  */
 
-const useApi = <TResponse, TData, TError = void>({
+const useApi = <TResponse, TData = void, TError = void>({
   apiId,
   apiUrl,
   method,
@@ -29,7 +29,9 @@ const useApi = <TResponse, TData, TError = void>({
   headers = {},
   cacheExpiry,
   retry,
-}: UseApiParams<TData>): UseApiResponse<TResponse, TError> => {
+  onSuccess,
+  onError,
+}: UseApiParams<TResponse, TData, TError>): UseApiResponse<TResponse, TError> => {
   const { getCache, setCache } = useApiContext()
   let retryTimes: number = retry || 0
 
@@ -43,18 +45,21 @@ const useApi = <TResponse, TData, TError = void>({
 
   const apiIdentifier: string = apiId || JSON.stringify({ apiUrl, method, data })
 
-  const cachedVsNewData = (cachedData: TResponse, response: Response): void => {
-    response.json().then((newData: TResponse): void => {
-      if (!areObjectsEqual<TResponse>(cachedData, newData)) {
-        setState({
-          data: newData,
-          error: null,
-          isError: false,
-          isLoading: false,
-          isRetrying: false,
-        })
-      }
-    })
+  const cachedVsNewData = (
+    cachedData: TResponse,
+    newResponse: TResponse,
+    onSuccess?: (response: TResponse) => void,
+  ): void => {
+    if (!areObjectsEqual<TResponse>(cachedData, newResponse)) {
+      onSuccess?.(newResponse)
+      setState({
+        data: newResponse,
+        error: null,
+        isError: false,
+        isLoading: false,
+        isRetrying: false,
+      })
+    }
   }
 
   const triggerAPI = async (): Promise<void> => {
@@ -73,7 +78,12 @@ const useApi = <TResponse, TData, TError = void>({
           body: JSON.stringify(data),
           headers,
         })
-        cachedVsNewData(cachedResponse, response)
+        const responseData = await response.json()
+        if (!response.ok) {
+          throw responseData
+        } else {
+          cachedVsNewData(cachedResponse, responseData, onSuccess)
+        }
       } else {
         const response: Response = await createRequest(apiUrl, {
           method,
@@ -81,16 +91,20 @@ const useApi = <TResponse, TData, TError = void>({
           headers,
         })
         const responseData = await response.json()
-        setState({
-          data: responseData,
-          error: null,
-          isError: false,
-          isLoading: false,
-          isRetrying: false,
-        })
-        setCache<TResponse>(apiIdentifier, responseData, cacheExpiry)
+        if (!response.ok) {
+          throw responseData
+        } else {
+          setState({
+            data: responseData,
+            error: null,
+            isError: false,
+            isLoading: false,
+            isRetrying: false,
+          })
+          setCache<TResponse>(apiIdentifier, responseData, cacheExpiry)
+        }
       }
-    } catch (error: unknown) {
+    } catch (error: unknown | TError) {
       if (retryTimes && retryTimes > 0) {
         retryTimes--
         setState({
@@ -102,9 +116,11 @@ const useApi = <TResponse, TData, TError = void>({
         })
         triggerAPI()
       } else {
+        const normalError = normalizeError(error)
+        onError?.(normalError)
         setState({
           data: undefined,
-          error: error as TError,
+          error: normalError,
           isLoading: false,
           isError: true,
           isRetrying: false,
