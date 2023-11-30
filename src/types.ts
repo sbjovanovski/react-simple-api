@@ -12,6 +12,7 @@ interface UseApiResponse<T, TError = void> {
   isError: boolean
   isRetrying: boolean
   error: TError | null
+  refetchApi: () => Promise<void>
 }
 
 interface UseApiParams<TResponse, TData, TError> {

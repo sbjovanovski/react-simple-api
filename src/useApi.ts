@@ -44,6 +44,7 @@ const useApi = <TResponse, TData = void, TError = void>({
     isError: false,
     isLoading: true,
     isRetrying: false,
+    refetchApi: async (): Promise<void> => {},
   })
 
   const apiIdentifier: string = apiId || JSON.stringify({ apiUrl, method, data })
@@ -61,6 +62,7 @@ const useApi = <TResponse, TData = void, TError = void>({
         isError: false,
         isLoading: false,
         isRetrying: false,
+        refetchApi: triggerAPI,
       })
       setCache<TResponse>(apiId, newResponse, cacheExpiry)
     }
@@ -77,6 +79,7 @@ const useApi = <TResponse, TData = void, TError = void>({
           isError: false,
           isLoading: false,
           isRetrying: false,
+          refetchApi: triggerAPI,
         })
 
         // get the new data from the API
@@ -112,6 +115,7 @@ const useApi = <TResponse, TData = void, TError = void>({
             isError: false,
             isLoading: false,
             isRetrying: false,
+            refetchApi: triggerAPI,
           })
           setCache<TResponse>(apiIdentifier, responseData, cacheExpiry)
         }
@@ -126,6 +130,7 @@ const useApi = <TResponse, TData = void, TError = void>({
           isError: false,
           isLoading: true,
           isRetrying: true,
+          refetchApi: triggerAPI,
         })
         triggerAPI()
       } else {
@@ -137,6 +142,7 @@ const useApi = <TResponse, TData = void, TError = void>({
           isLoading: false,
           isError: true,
           isRetrying: false,
+          refetchApi: triggerAPI,
         })
       }
     }
@@ -149,6 +155,7 @@ const useApi = <TResponse, TData = void, TError = void>({
       isError: false,
       isLoading: true,
       isRetrying: false,
+      refetchApi: triggerAPI,
     })
     triggerAPI()
 
