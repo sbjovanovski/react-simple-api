@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { UseApiResponse, UseApiParams } from './types'
 import { createRequest, normalizeError } from './utils'
 
-interface UseMutateApiResponse<TResponse, TData, TError> extends UseApiResponse<TResponse, TError> {
+interface UseMutateApiState<TResponse, TError> extends Omit<UseApiResponse<TResponse, TError>, 'refetchApi'> {}
+
+interface UseMutateApiResponse<TResponse, TData, TError> extends UseMutateApiState<TResponse, TError> {
   mutate: (data: TData) => Promise<void>
 }
 
@@ -19,7 +21,7 @@ const useMutateApi = <TResponse, TData = void, TError = void>({
 }: UseMutationApiParams<TResponse, TData, TError>): UseMutateApiResponse<TResponse, TData, TError> => {
   let retryTimes: number = retry || 0
 
-  const [state, setState] = useState<UseApiResponse<TResponse, TError>>({
+  const [state, setState] = useState<UseMutateApiState<TResponse, TError>>({
     data: undefined,
     error: null,
     isError: false,
@@ -29,7 +31,7 @@ const useMutateApi = <TResponse, TData = void, TError = void>({
 
   const mutate = async (data: TData): Promise<void> => {
     setState(
-      (prevState: UseApiResponse<TResponse, TError>): UseApiResponse<TResponse, TError> => ({
+      (prevState: UseMutateApiState<TResponse, TError>): UseMutateApiState<TResponse, TError> => ({
         ...prevState,
         isLoading: true,
       }),
