@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { UseApiResponse, UseApiParams } from './types'
 import { createRequest, normalizeError } from './utils'
 
-interface UseMutateApiState<TResponse, TError> extends Omit<UseApiResponse<TResponse, TError>, 'refetchApi'> {}
+interface UseMutateApiState<TResponse, TError> extends Omit<UseApiResponse<TResponse, TError>, 'triggerApi'> {}
 
 interface UseMutateApiResponse<TResponse, TData, TError> extends UseMutateApiState<TResponse, TError> {
   mutate: (data: TData) => Promise<void>
