@@ -2,7 +2,9 @@
   "include": ["src"],
   "exclude": [
     "dist",
-    "node_modules"
+    "node_modules",
+    "src/__tests__",
+    "coverage"
   ],
   "compilerOptions": {
     "module": "esnext",

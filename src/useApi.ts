@@ -34,6 +34,7 @@ const useApi = <TResponse, TData = void, TError = void>({
   onSuccess,
   onError,
   pollInterval,
+  manualTrigger,
 }: UseApiParams<TResponse, TData, TError>): UseApiResponse<TResponse, TError> => {
   const { getCache, setCache } = useApiContext()
   let retryTimes: number = retry || 0
@@ -42,9 +43,9 @@ const useApi = <TResponse, TData = void, TError = void>({
     data: undefined,
     error: null,
     isError: false,
-    isLoading: true,
+    isLoading: false,
     isRetrying: false,
-    refetchApi: async (): Promise<void> => {},
+    triggerApi: async (): Promise<void> => {},
   })
 
   const apiIdentifier: string = apiId || JSON.stringify({ apiUrl, method, data })
@@ -62,7 +63,7 @@ const useApi = <TResponse, TData = void, TError = void>({
         isError: false,
         isLoading: false,
         isRetrying: false,
-        refetchApi: triggerAPI,
+        triggerApi: triggerAPI,
       })
       setCache<TResponse>(apiId, newResponse, cacheExpiry)
     }
@@ -79,7 +80,12 @@ const useApi = <TResponse, TData = void, TError = void>({
           isError: false,
           isLoading: false,
           isRetrying: false,
-          refetchApi: triggerAPI,
+          triggerApi: triggerAPI,
+          ...(process.env.NODE_ENV !== 'production'
+            ? {
+                cached: true,
+              }
+            : {}),
         })
 
         // get the new data from the API
@@ -115,7 +121,7 @@ const useApi = <TResponse, TData = void, TError = void>({
             isError: false,
             isLoading: false,
             isRetrying: false,
-            refetchApi: triggerAPI,
+            triggerApi: triggerAPI,
           })
           setCache<TResponse>(apiIdentifier, responseData, cacheExpiry)
         }
@@ -130,7 +136,7 @@ const useApi = <TResponse, TData = void, TError = void>({
           isError: false,
           isLoading: true,
           isRetrying: true,
-          refetchApi: triggerAPI,
+          triggerApi: triggerAPI,
         })
         triggerAPI()
       } else {
@@ -142,25 +148,28 @@ const useApi = <TResponse, TData = void, TError = void>({
           isLoading: false,
           isError: true,
           isRetrying: false,
-          refetchApi: triggerAPI,
+          triggerApi: triggerAPI,
         })
       }
     }
   }
 
   useEffect(() => {
-    setState({
-      data: undefined,
-      error: null,
-      isError: false,
-      isLoading: true,
-      isRetrying: false,
-      refetchApi: triggerAPI,
-    })
-    triggerAPI()
+    if (!manualTrigger) {
+      setState({
+        data: undefined,
+        error: null,
+        isError: false,
+        isLoading: true,
+        isRetrying: false,
+        triggerApi: triggerAPI,
+      })
 
-    if (pollInterval) {
-      interval = setInterval(triggerAPI, pollInterval)
+      triggerAPI()
+
+      if (pollInterval) {
+        interval = setInterval(triggerAPI, pollInterval)
+      }
     }
 
     return () => {

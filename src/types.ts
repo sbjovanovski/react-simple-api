@@ -12,7 +12,7 @@ interface UseApiResponse<T, TError = void> {
   isError: boolean
   isRetrying: boolean
   error: TError | null
-  refetchApi: () => Promise<void>
+  triggerApi: () => Promise<void>
 }
 
 interface UseApiParams<TResponse, TData, TError> {
@@ -26,6 +26,7 @@ interface UseApiParams<TResponse, TData, TError> {
   onSuccess?: (response: TResponse) => void
   onError?: (error: TError) => void
   pollInterval?: number
+  manualTrigger?: boolean
 }
 
 export { APIMethod, UseApiResponse, UseApiParams }
