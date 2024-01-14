@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { UseApiResponse, UseApiParams } from './types'
 import { createRequest, normalizeError } from './utils'
+import { useApiContext } from './CacheContext'
 
 interface UseMutateApiState<TResponse, TError> extends Omit<UseApiResponse<TResponse, TError>, 'triggerApi'> {}
 
@@ -19,6 +20,7 @@ const useMutateApi = <TResponse, TData = void, TError = void>({
   onSuccess,
   onError,
 }: UseMutationApiParams<TResponse, TData, TError>): UseMutateApiResponse<TResponse, TData, TError> => {
+  const { baseApiUrl } = useApiContext()
   let retryTimes: number = retry || 0
 
   const [state, setState] = useState<UseMutateApiState<TResponse, TError>>({
@@ -29,6 +31,8 @@ const useMutateApi = <TResponse, TData = void, TError = void>({
     isRetrying: false,
   })
 
+  const finalUrl: string = baseApiUrl ? baseApiUrl + apiUrl : apiUrl
+
   const mutate = async (data: TData): Promise<void> => {
     setState(
       (prevState: UseMutateApiState<TResponse, TError>): UseMutateApiState<TResponse, TError> => ({
@@ -37,7 +41,7 @@ const useMutateApi = <TResponse, TData = void, TError = void>({
       }),
     )
     try {
-      const response: Response = await createRequest(apiUrl, {
+      const response: Response = await createRequest(finalUrl, {
         method,
         body: JSON.stringify(data),
         headers,

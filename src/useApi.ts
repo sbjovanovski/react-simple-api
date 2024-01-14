@@ -36,7 +36,7 @@ const useApi = <TResponse, TData = void, TError = void>({
   pollInterval,
   manualTrigger,
 }: UseApiParams<TResponse, TData, TError>): UseApiResponse<TResponse, TError> => {
-  const { getCache, setCache } = useApiContext()
+  const { getCache, setCache, baseApiUrl } = useApiContext()
   let retryTimes: number = retry || 0
 
   const [state, setState] = useState<UseApiResponse<TResponse, TError>>({
@@ -48,7 +48,9 @@ const useApi = <TResponse, TData = void, TError = void>({
     triggerApi: async (): Promise<void> => {},
   })
 
-  const apiIdentifier: string = apiId || JSON.stringify({ apiUrl, method, data })
+  const finalUrl: string = baseApiUrl ? baseApiUrl + apiUrl : apiUrl
+
+  const apiIdentifier: string = apiId || JSON.stringify({ finalUrl, method, data })
 
   const cachedVsNewData = (
     cachedData: TResponse,
@@ -89,7 +91,7 @@ const useApi = <TResponse, TData = void, TError = void>({
         })
 
         // get the new data from the API
-        const response: Response = await createRequest(apiUrl, {
+        const response: Response = await createRequest(finalUrl, {
           method,
           body: JSON.stringify(data),
           headers,
@@ -105,7 +107,7 @@ const useApi = <TResponse, TData = void, TError = void>({
         }
       } else {
         // if cached data doesn't exist, get new data from the API
-        const response: Response = await createRequest(apiUrl, {
+        const response: Response = await createRequest(finalUrl, {
           method,
           body: JSON.stringify(data),
           headers,

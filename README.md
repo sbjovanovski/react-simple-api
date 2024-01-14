@@ -5,13 +5,13 @@ Query and cache API data
 ### Install
 
 ```
-npm install react-simple-query
+npm install react-simple-api
 ```
 
 or
 
 ```
-yarn add react-simple-query
+yarn add react-simple-api
 ```
 
 ### Usage

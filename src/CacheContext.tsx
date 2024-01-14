@@ -5,6 +5,8 @@ interface ApiCacheContextData {
   getCache<T>(id: string): T
 
   setCache<T>(id: string, data: T, cacheExpiry?: number): T
+
+  baseApiUrl?: string
 }
 
 const ApiCacheContext: Context<ApiCacheContextData> = createContext<ApiCacheContextData>({
@@ -13,7 +15,7 @@ const ApiCacheContext: Context<ApiCacheContextData> = createContext<ApiCacheCont
   setCache: (_id: string, data: any, _cacheExpiry?: number) => data,
 })
 
-const ApiContextProvider = ({ children }: { children: ReactNode }) => {
+const ApiContextProvider = ({ children, baseApiUrl }: { children: ReactNode; baseApiUrl?: string }) => {
   const cache = new ApiCache()
 
   const handleSetCache = (id: string, data: any, cacheExpiry?: number) => {
@@ -26,7 +28,7 @@ const ApiContextProvider = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <ApiCacheContext.Provider value={{ getCache: handleGetCache, setCache: handleSetCache }}>
+    <ApiCacheContext.Provider value={{ getCache: handleGetCache, setCache: handleSetCache, baseApiUrl }}>
       {children}
     </ApiCacheContext.Provider>
   )
