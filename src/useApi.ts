@@ -126,6 +126,7 @@ const useApi = <TResponse, TData = void, TError = void>({
             triggerApi: triggerAPI,
           })
           setCache<TResponse>(apiIdentifier, responseData, cacheExpiry)
+          onSuccess?.(responseData)
         }
       }
     } catch (error: unknown | TError) {
