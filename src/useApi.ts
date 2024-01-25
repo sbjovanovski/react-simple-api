@@ -52,13 +52,8 @@ const useApi = <TResponse, TData = void, TError = void>({
 
   const apiIdentifier: string = apiId || JSON.stringify({ finalUrl, method, data })
 
-  const cachedVsNewData = (
-    cachedData: TResponse,
-    newResponse: TResponse,
-    onSuccess?: (response: TResponse) => void,
-  ): void => {
+  const cachedVsNewData = (cachedData: TResponse, newResponse: TResponse): void => {
     if (!areObjectsEqual<TResponse>(cachedData, newResponse)) {
-      onSuccess?.(newResponse)
       setState({
         data: newResponse,
         error: null,
@@ -103,7 +98,8 @@ const useApi = <TResponse, TData = void, TError = void>({
           // compare the old cached data vs the new data
           // if the new data is different from the cached data
           // update the cache with the new data and return the new data
-          cachedVsNewData(cachedResponse, responseData, onSuccess)
+          cachedVsNewData(cachedResponse, responseData)
+          onSuccess?.(responseData)
         }
       } else {
         // if cached data doesn't exist, get new data from the API
