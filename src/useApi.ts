@@ -91,15 +91,16 @@ const useApi = <TResponse, TData = void, TError = void>({
           body: JSON.stringify(data),
           headers,
         })
-        const responseData = await response.json()
+        const responseText: string = await response.text()
+        const responseData: TResponse = responseText && responseText.length > 0 ? JSON.parse(responseText) : {}
         if (!response.ok) {
           throw responseData
         } else {
           // compare the old cached data vs the new data
           // if the new data is different from the cached data
           // update the cache with the new data and return the new data
-          cachedVsNewData(cachedResponse, responseData)
           onSuccess?.(responseData)
+          cachedVsNewData(cachedResponse, responseData)
         }
       } else {
         // if cached data doesn't exist, get new data from the API
@@ -108,11 +109,13 @@ const useApi = <TResponse, TData = void, TError = void>({
           body: JSON.stringify(data),
           headers,
         })
-        const responseData = await response.json()
+        const responseText: string = await response.text()
+        const responseData: TResponse = responseText && responseText.length > 0 ? JSON.parse(responseText) : {}
         if (!response.ok) {
           throw responseData
         } else {
           // add the data in the cache and return it
+          onSuccess?.(responseData)
           setState({
             data: responseData,
             error: null,
@@ -122,7 +125,6 @@ const useApi = <TResponse, TData = void, TError = void>({
             triggerApi: triggerAPI,
           })
           setCache<TResponse>(apiIdentifier, responseData, cacheExpiry)
-          onSuccess?.(responseData)
         }
       }
     } catch (error: unknown | TError) {

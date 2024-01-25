@@ -1,6 +1,6 @@
 {
   "name": "react-simple-api",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "Create and cache API requests and responses",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",

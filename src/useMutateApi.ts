@@ -46,7 +46,8 @@ const useMutateApi = <TResponse, TData = void, TError = void>({
         body: JSON.stringify(data),
         headers,
       })
-      const responseData = await response.json()
+      const responseText: string = await response.text()
+      const responseData: TResponse = responseText && responseText.length > 0 ? JSON.parse(responseText) : {}
       if (!response.ok) {
         throw responseData
       } else {
