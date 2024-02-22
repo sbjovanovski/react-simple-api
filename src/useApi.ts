@@ -34,7 +34,6 @@ const useApi = <TResponse, TData = void, TError = void>({
   onSuccess,
   onError,
   pollInterval,
-  manualTrigger,
   enabled = true,
 }: UseApiParams<TResponse, TData, TError>): UseApiResponse<TResponse, TError> => {
   const { getCache, setCache, baseApiUrl } = useApiContext()

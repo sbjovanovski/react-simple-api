@@ -27,8 +27,8 @@ interface UseApiParams<TResponse, TData, TError> {
   onError?: (error: TError) => void
   pollInterval?: number
   /**
- * @deprecated Use `enabled` instead
- */
+   * @deprecated Use `enabled` instead
+   */
   manualTrigger?: boolean
   enabled?: boolean
 }
