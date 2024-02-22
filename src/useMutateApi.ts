@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { UseApiResponse, UseApiParams } from './types'
-import { createRequest, isObject, normalizeError } from './utils'
+import { createRequest, normalizeError } from './utils'
 import { useApiContext } from './CacheContext'
 
 interface UseMutateApiState<TResponse, TError> extends Omit<UseApiResponse<TResponse, TError>, 'triggerApi'> {}
@@ -34,12 +34,9 @@ const useMutateApi = <TResponse, TData = void, TError = void>({
   const finalUrl: string = baseApiUrl ? baseApiUrl + apiUrl : apiUrl
 
   const mutate = async (data: TData): Promise<void> => {
-    const isDataJSONObject = isObject(data)
-    let body = data
+    const isDataJSONObject = !(data instanceof File || data instanceof FormData)
 
-    if (isDataJSONObject) {
-      body = JSON.stringify(data) as TData
-    }
+    const body = isDataJSONObject ? JSON.stringify(data) : data
 
     setState(
       (prevState: UseMutateApiState<TResponse, TError>): UseMutateApiState<TResponse, TError> => ({

@@ -35,10 +35,4 @@ const normalizeError = (error: any) => {
   return error
 }
 
-type AnyObject = { [K in PropertyKey]: unknown }
-
-const isObject = (value: unknown): value is AnyObject => {
-  return typeof value === 'object' && !Array.isArray(value)
-}
-
-export { areObjectsEqual, createRequest, normalizeError, isObject }
+export { areObjectsEqual, createRequest, normalizeError }
