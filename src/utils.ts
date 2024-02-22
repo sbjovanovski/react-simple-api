@@ -5,14 +5,28 @@ const areObjectsEqual = <T>(obj1: T, obj2: T): boolean => {
   return stringObj1 === stringObj2
 }
 
-const createRequest = async (apiUrl: string, requestInfo: RequestInit | undefined): Promise<Response> =>
-  await fetch(apiUrl, {
+type RequestHeaders = HeadersInit & { 'content-type': string }
+
+const createRequest = async ({
+  apiUrl,
+  requestInfo,
+  withContentTypeJSON = true,
+}: {
+  apiUrl: string
+  requestInfo: RequestInit | undefined
+  withContentTypeJSON?: boolean
+}): Promise<Response> => {
+  const headers: RequestHeaders = (requestInfo?.headers as RequestHeaders) || {}
+
+  if (withContentTypeJSON) {
+    headers['content-type'] = 'application/json'
+  }
+
+  return await fetch(apiUrl, {
     ...requestInfo,
-    headers: new Headers({
-      'content-type': 'application/json',
-      ...requestInfo?.headers,
-    }),
+    headers: new Headers(headers),
   })
+}
 
 const normalizeError = (error: any) => {
   if (error?.response) {
@@ -21,4 +35,10 @@ const normalizeError = (error: any) => {
   return error
 }
 
-export { areObjectsEqual, createRequest, normalizeError }
+type AnyObject = { [K in PropertyKey]: unknown }
+
+const isObject = (value: unknown): value is AnyObject => {
+  return typeof value === 'object' && !Array.isArray(value)
+}
+
+export { areObjectsEqual, createRequest, normalizeError, isObject }

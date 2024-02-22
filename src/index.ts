@@ -1,4 +1,4 @@
 export { useApi } from './useApi'
 export { useMutateApi } from './useMutateApi'
-export { APIMethod, UseApiResponse } from './types'
-export { ApiContextProvider } from './CacheContext'
+export { APIMethod, UseApiResponse, UseApiParams } from './types'
+export { ApiContextProvider, useApiContext } from './CacheContext'

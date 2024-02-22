@@ -26,7 +26,11 @@ interface UseApiParams<TResponse, TData, TError> {
   onSuccess?: (response: TResponse) => void
   onError?: (error: TError) => void
   pollInterval?: number
+  /**
+ * @deprecated Use `enabled` instead
+ */
   manualTrigger?: boolean
+  enabled?: boolean
 }
 
 export { APIMethod, UseApiResponse, UseApiParams }

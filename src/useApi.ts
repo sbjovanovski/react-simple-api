@@ -35,6 +35,7 @@ const useApi = <TResponse, TData = void, TError = void>({
   onError,
   pollInterval,
   manualTrigger,
+  enabled = true,
 }: UseApiParams<TResponse, TData, TError>): UseApiResponse<TResponse, TError> => {
   const { getCache, setCache, baseApiUrl } = useApiContext()
   let retryTimes: number = retry || 0
@@ -86,10 +87,13 @@ const useApi = <TResponse, TData = void, TError = void>({
         })
 
         // get the new data from the API
-        const response: Response = await createRequest(finalUrl, {
-          method,
-          body: JSON.stringify(data),
-          headers,
+        const response: Response = await createRequest({
+          apiUrl: finalUrl,
+          requestInfo: {
+            method,
+            body: JSON.stringify(data),
+            headers,
+          },
         })
         const responseText: string = await response.text()
         const responseData: TResponse = responseText && responseText.length > 0 ? JSON.parse(responseText) : {}
@@ -104,10 +108,13 @@ const useApi = <TResponse, TData = void, TError = void>({
         }
       } else {
         // if cached data doesn't exist, get new data from the API
-        const response: Response = await createRequest(finalUrl, {
-          method,
-          body: JSON.stringify(data),
-          headers,
+        const response: Response = await createRequest({
+          apiUrl: finalUrl,
+          requestInfo: {
+            method,
+            body: JSON.stringify(data),
+            headers,
+          },
         })
         const responseText: string = await response.text()
         const responseData: TResponse = responseText && responseText.length > 0 ? JSON.parse(responseText) : {}
@@ -156,7 +163,7 @@ const useApi = <TResponse, TData = void, TError = void>({
   }
 
   useEffect(() => {
-    if (!manualTrigger) {
+    if (enabled) {
       setState({
         data: undefined,
         error: null,

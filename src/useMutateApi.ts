@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { UseApiResponse, UseApiParams } from './types'
-import { createRequest, normalizeError } from './utils'
+import { createRequest, isObject, normalizeError } from './utils'
 import { useApiContext } from './CacheContext'
 
 interface UseMutateApiState<TResponse, TError> extends Omit<UseApiResponse<TResponse, TError>, 'triggerApi'> {}
@@ -34,6 +34,13 @@ const useMutateApi = <TResponse, TData = void, TError = void>({
   const finalUrl: string = baseApiUrl ? baseApiUrl + apiUrl : apiUrl
 
   const mutate = async (data: TData): Promise<void> => {
+    const isDataJSONObject = isObject(data)
+    let body = data
+
+    if (isDataJSONObject) {
+      body = JSON.stringify(data) as TData
+    }
+
     setState(
       (prevState: UseMutateApiState<TResponse, TError>): UseMutateApiState<TResponse, TError> => ({
         ...prevState,
@@ -41,10 +48,14 @@ const useMutateApi = <TResponse, TData = void, TError = void>({
       }),
     )
     try {
-      const response: Response = await createRequest(finalUrl, {
-        method,
-        body: JSON.stringify(data),
-        headers,
+      const response: Response = await createRequest({
+        apiUrl: finalUrl,
+        requestInfo: {
+          method,
+          body: body as BodyInit,
+          headers,
+        },
+        withContentTypeJSON: isDataJSONObject,
       })
       const responseText: string = await response.text()
       const responseData: TResponse = responseText && responseText.length > 0 ? JSON.parse(responseText) : {}
