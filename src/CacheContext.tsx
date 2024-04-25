@@ -11,12 +11,11 @@ interface ApiCacheContextData {
 
 const ApiCacheContext: Context<ApiCacheContextData> = createContext<ApiCacheContextData>({
   getCache: (id: string): any => id,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  setCache: (_id: string, data: any, _cacheExpiry?: number) => data,
+  setCache: (_id: string, data: any) => data,
 })
 
 const ApiContextProvider = ({ children, baseApiUrl }: { children: ReactNode; baseApiUrl?: string }) => {
-  const cache = new ApiCache()
+  const cache = ApiCache.getInstance()
 
   const handleSetCache = (id: string, data: any, cacheExpiry?: number) => {
     cache.setCachedResponse(id, data, cacheExpiry)

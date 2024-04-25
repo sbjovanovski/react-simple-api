@@ -1,5 +1,15 @@
-class ApiCache<T> {
+class ApiCache<T = void> {
   private apiResponses: Map<string, T> = new Map()
+  private static instance: ApiCache
+
+  // Ensure that there is only one instance of the cache in the application
+  static getInstance(): ApiCache {
+    if (this.instance) {
+      return this.instance
+    }
+    this.instance = new ApiCache()
+    return this.instance
+  }
 
   getCachedResponse(id: string): T | undefined {
     return this.apiResponses.get(id)
