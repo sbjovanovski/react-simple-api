@@ -52,22 +52,13 @@ const useApi = <TResponse, TData = void, TError = void>({
 
   const apiIdentifier: string = apiId || JSON.stringify({ finalUrl, method, data })
 
-  const cachedVsNewData = (cachedData: TResponse, newResponse: TResponse): void => {
-    if (!areObjectsEqual<TResponse>(cachedData, newResponse)) {
-      setState({
-        data: newResponse,
-        error: null,
-        isError: false,
-        isLoading: false,
-        isRetrying: false,
-        triggerApi: triggerAPI,
-      })
-      setCache<TResponse>(apiId, newResponse, cacheExpiry)
-    }
+  const isCacheOutdated = (cachedData: TResponse, newResponseData: TResponse): boolean => {
+    return !areObjectsEqual<TResponse>(cachedData, newResponseData)
   }
 
   const triggerAPI = async (): Promise<void> => {
     try {
+      // check if there is cached response
       const cachedResponse: TResponse = getCache<TResponse>(apiIdentifier)
       if (cachedResponse) {
         // return the cached response immediately
@@ -84,54 +75,38 @@ const useApi = <TResponse, TData = void, TError = void>({
               }
             : {}),
         })
+      }
 
-        // get the new data from the API
-        const response: Response = await createRequest({
-          apiUrl: finalUrl,
-          requestInfo: {
-            method,
-            body: JSON.stringify(data),
-            headers,
-          },
+      // get the new data from the API
+      const response: Response = await createRequest({
+        apiUrl: finalUrl,
+        requestInfo: {
+          method,
+          body: JSON.stringify(data),
+          headers,
+        },
+      })
+      const responseText: string = await response.text()
+      const responseData: TResponse = responseText && responseText.length > 0 ? JSON.parse(responseText) : {}
+
+      // if API fails, throw error
+      if (!response.ok) {
+        throw responseData
+      }
+
+      // compare the old cached data vs the new data
+      // if the cached data is old, replace it with the new response data
+      onSuccess?.(responseData)
+      if (isCacheOutdated(cachedResponse, responseData)) {
+        setState({
+          data: responseData,
+          error: null,
+          isError: false,
+          isLoading: false,
+          isRetrying: false,
+          triggerApi: triggerAPI,
         })
-        const responseText: string = await response.text()
-        const responseData: TResponse = responseText && responseText.length > 0 ? JSON.parse(responseText) : {}
-        if (!response.ok) {
-          throw responseData
-        } else {
-          // compare the old cached data vs the new data
-          // if the new data is different from the cached data
-          // update the cache with the new data and return the new data
-          onSuccess?.(responseData)
-          cachedVsNewData(cachedResponse, responseData)
-        }
-      } else {
-        // if cached data doesn't exist, get new data from the API
-        const response: Response = await createRequest({
-          apiUrl: finalUrl,
-          requestInfo: {
-            method,
-            body: JSON.stringify(data),
-            headers,
-          },
-        })
-        const responseText: string = await response.text()
-        const responseData: TResponse = responseText && responseText.length > 0 ? JSON.parse(responseText) : {}
-        if (!response.ok) {
-          throw responseData
-        } else {
-          // add the data in the cache and return it
-          onSuccess?.(responseData)
-          setState({
-            data: responseData,
-            error: null,
-            isError: false,
-            isLoading: false,
-            isRetrying: false,
-            triggerApi: triggerAPI,
-          })
-          setCache<TResponse>(apiIdentifier, responseData, cacheExpiry)
-        }
+        setCache<TResponse>(apiIdentifier, responseData, cacheExpiry)
       }
     } catch (error: unknown | TError) {
       // if retry is specified, trigger the API call again, until retryTimes is 0
@@ -180,7 +155,9 @@ const useApi = <TResponse, TData = void, TError = void>({
     }
 
     return () => {
-      clearInterval(interval)
+      if (interval) {
+        clearInterval(interval)
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiId, pollInterval])
