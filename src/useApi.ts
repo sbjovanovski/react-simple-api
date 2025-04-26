@@ -138,6 +138,8 @@ const useApi = <TResponse, TData = void, TError = void>({
 
   useEffect(() => {
     if (enabled) {
+      triggerAPI()
+
       setState({
         data: undefined,
         error: null,
@@ -146,8 +148,6 @@ const useApi = <TResponse, TData = void, TError = void>({
         isRetrying: false,
         triggerApi: triggerAPI,
       })
-
-      triggerAPI()
 
       if (pollInterval) {
         interval = setInterval(triggerAPI, pollInterval)
@@ -160,7 +160,7 @@ const useApi = <TResponse, TData = void, TError = void>({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiId, pollInterval])
+  }, [apiId])
 
   return state
 }

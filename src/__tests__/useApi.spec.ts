@@ -41,12 +41,14 @@ describe('Fetch Success', () => {
     )
 
     expect(getCache).toHaveBeenCalledWith(apiParams.apiId)
+    expect(getCache).toHaveBeenCalledTimes(1)
     expect(cache.has(apiParams.apiId)).toBe(false)
     await waitFor(() => {
       expect(result?.current?.data?.success).toBe(true)
       expect(result.current?.cached).toBe(undefined)
     })
     expect(setCache).toHaveBeenCalledWith(apiParams.apiId, { success: true }, undefined)
+    expect(setCache).toHaveBeenCalledTimes(1)
   })
 })
 
