@@ -43,7 +43,7 @@ const useApi = <TResponse, TData = void, TError = void>({
     data: undefined,
     error: null,
     isError: false,
-    isLoading: false,
+    isLoading: true,
     isRetrying: false,
     triggerApi: async (): Promise<void> => {},
   })
@@ -62,19 +62,19 @@ const useApi = <TResponse, TData = void, TError = void>({
       const cachedResponse: TResponse = getCache<TResponse>(apiIdentifier)
       if (cachedResponse) {
         // return the cached response immediately
-        setState({
+        setState((prevState) => ({
+          ...prevState,
           data: cachedResponse,
           error: null,
           isError: false,
           isLoading: false,
           isRetrying: false,
-          triggerApi: triggerAPI,
           ...(process.env.NODE_ENV !== 'production'
             ? {
                 cached: true,
               }
             : {}),
-        })
+        }))
       }
 
       // get the new data from the API
@@ -98,58 +98,52 @@ const useApi = <TResponse, TData = void, TError = void>({
       // if the cached data is old, replace it with the new response data
       onSuccess?.(responseData)
       if (isCacheOutdated(cachedResponse, responseData)) {
-        setState({
+        setState((prevState) => ({
+          ...prevState,
           data: responseData,
           error: null,
           isError: false,
           isLoading: false,
           isRetrying: false,
-          triggerApi: triggerAPI,
-        })
+        }))
         setCache<TResponse>(apiIdentifier, responseData, cacheExpiry)
       }
     } catch (error: unknown | TError) {
       // if retry is specified, trigger the API call again, until retryTimes is 0
       if (retryTimes && retryTimes > 0) {
         retryTimes--
-        setState({
+        setState((prevState) => ({
+          ...prevState,
           data: undefined,
           error: null,
           isError: false,
           isLoading: true,
           isRetrying: true,
-          triggerApi: triggerAPI,
-        })
+        }))
         triggerAPI()
       } else {
         const normalError = normalizeError(error)
         onError?.(normalError)
-        setState({
+        setState((prevState) => ({
+          ...prevState,
           data: undefined,
           error: normalError,
           isLoading: false,
           isError: true,
           isRetrying: false,
-          triggerApi: triggerAPI,
-        })
+        }))
       }
     }
   }
 
   useEffect(() => {
+    setState((prevState) => ({
+      ...prevState,
+      triggerApi: triggerAPI,
+    }))
     if (enabled) {
       triggerAPI()
-
-      setState({
-        data: undefined,
-        error: null,
-        isError: false,
-        isLoading: true,
-        isRetrying: false,
-        triggerApi: triggerAPI,
-      })
-
-      if (pollInterval) {
+      if (pollInterval && pollInterval > 0) {
         interval = setInterval(triggerAPI, pollInterval)
       }
     }
@@ -160,7 +154,7 @@ const useApi = <TResponse, TData = void, TError = void>({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiId])
+  }, [apiId, pollInterval])
 
   return state
 }
