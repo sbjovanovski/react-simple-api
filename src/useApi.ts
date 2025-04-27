@@ -50,8 +50,8 @@ const useApi = <TResponse, TData = void, TError = void>({
 
   const [responseData, setResponseData] = useState<TResponse | undefined>(undefined)
   const [errorData, setErrorData] = useState<ErrorState<TError>>(initialErrorData)
-  const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [isFetching, setIsFetching] = useState<boolean>(false)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [isFetching, setIsFetching] = useState<boolean>(true)
   const [isRetrying, setIsRetrying] = useState<boolean>(false)
   const [cached, setCached] = useState<boolean>(false)
 
@@ -61,8 +61,6 @@ const useApi = <TResponse, TData = void, TError = void>({
 
   const triggerAPI = useCallback(async (): Promise<void> => {
     if (!enabled) return
-    setIsLoading(true)
-    setIsFetching(true)
     setErrorData(initialErrorData)
     try {
       // check if there is cached response
