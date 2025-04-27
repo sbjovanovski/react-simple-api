@@ -3,7 +3,8 @@ import { UseApiResponse, UseApiParams } from './types'
 import { createRequest, normalizeError } from './utils'
 import { useApiContext } from './CacheContext'
 
-interface UseMutateApiState<TResponse, TError> extends Omit<UseApiResponse<TResponse, TError>, 'triggerApi'> {}
+interface UseMutateApiState<TResponse, TError>
+  extends Omit<UseApiResponse<TResponse, TError>, 'triggerApi' | 'isFetching'> {}
 
 interface UseMutateApiResponse<TResponse, TData, TError> extends UseMutateApiState<TResponse, TError> {
   mutate: (data: TData) => Promise<void>
@@ -23,9 +24,9 @@ const useMutateApi = <TResponse, TData = void, TError = void>({
   const { baseApiUrl } = useApiContext()
   let retryTimes: number = retry || 0
 
-  const [state, setState] = useState<UseMutateApiState<TResponse, TError>>({
+  const [state, setState] = useState<Omit<UseMutateApiState<TResponse, TError>, 'isFetching'>>({
     data: undefined,
-    error: null,
+    error: undefined,
     isError: false,
     isLoading: false,
     isRetrying: false,
@@ -62,7 +63,7 @@ const useMutateApi = <TResponse, TData = void, TError = void>({
         onSuccess?.(responseData)
         setState({
           data: responseData,
-          error: null,
+          error: undefined,
           isError: false,
           isLoading: false,
           isRetrying: false,
@@ -73,7 +74,7 @@ const useMutateApi = <TResponse, TData = void, TError = void>({
         retryTimes--
         setState({
           data: undefined,
-          error: null,
+          error: undefined,
           isError: false,
           isLoading: true,
           isRetrying: true,

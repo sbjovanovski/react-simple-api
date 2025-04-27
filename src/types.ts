@@ -9,9 +9,10 @@ enum APIMethod {
 interface UseApiResponse<T, TError = void> {
   data: T | undefined
   isLoading: boolean
+  isFetching: boolean
   isError: boolean
   isRetrying: boolean
-  error: TError | null
+  error: TError | undefined
   triggerApi: () => void
 }
 

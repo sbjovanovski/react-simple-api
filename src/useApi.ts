@@ -21,6 +21,11 @@ const {data, isLoading, isError, error} = useApi<ResponseType, PostDataType>({
 })
  */
 
+type ErrorState<TError = void> = {
+  error: TError | undefined
+  isError: boolean
+}
+
 const useApi = <TResponse, TData = void, TError = void>({
   apiId,
   apiUrl,
@@ -36,42 +41,39 @@ const useApi = <TResponse, TData = void, TError = void>({
 }: UseApiParams<TResponse, TData, TError>): UseApiResponse<TResponse, TError> => {
   const { getCache, setCache, baseApiUrl } = useApiContext()
   let retryTimes: number = retry || 0
-
-  const [state, setState] = useState<Omit<UseApiResponse<TResponse, TError>, 'triggerApi'>>({
-    data: undefined,
-    error: null,
+  const initialErrorData: ErrorState<TError> = {
+    error: undefined,
     isError: false,
-    isLoading: true,
-    isRetrying: false,
-  })
-
+  }
   const finalUrl: string = baseApiUrl ? baseApiUrl + apiUrl : apiUrl
-
   const apiIdentifier: string = apiId ?? JSON.stringify({ finalUrl, method, data })
+
+  const [responseData, setResponseData] = useState<TResponse | undefined>(undefined)
+  const [errorData, setErrorData] = useState<ErrorState<TError>>(initialErrorData)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [isFetching, setIsFetching] = useState<boolean>(false)
+  const [isRetrying, setIsRetrying] = useState<boolean>(false)
+  const [cached, setCached] = useState<boolean>(false)
 
   const isCacheOutdated = (cachedData: TResponse, newResponseData: TResponse): boolean => {
     return !areObjectsEqual<TResponse>(cachedData, newResponseData)
   }
 
   const triggerAPI = useCallback(async (): Promise<void> => {
+    if (!enabled) return
+    setIsLoading(true)
+    setIsFetching(true)
+    setErrorData(initialErrorData)
     try {
       // check if there is cached response
       const cachedResponse: TResponse = getCache<TResponse>(apiIdentifier)
       if (cachedResponse) {
         // return the cached response immediately
-        setState((prevState) => ({
-          ...prevState,
-          data: cachedResponse,
-          error: null,
-          isError: false,
-          isLoading: false,
-          isRetrying: false,
-          ...(process.env.NODE_ENV !== 'production'
-            ? {
-                cached: true,
-              }
-            : {}),
-        }))
+        setResponseData(cachedResponse)
+        setIsLoading(false)
+        if (process.env.NODE_ENV !== 'production') {
+          setCached(true)
+        }
       }
 
       // get the new data from the API
@@ -91,44 +93,33 @@ const useApi = <TResponse, TData = void, TError = void>({
         throw responseData
       }
 
+      onSuccess?.(responseData)
+      setIsLoading(false)
+      setIsFetching(false)
+      setIsRetrying(false)
+
       // compare the old cached data vs the new data
       // if the cached data is old, replace it with the new response data
-      onSuccess?.(responseData)
       if (isCacheOutdated(cachedResponse, responseData)) {
-        setState((prevState) => ({
-          ...prevState,
-          data: responseData,
-          error: null,
-          isError: false,
-          isLoading: false,
-          isRetrying: false,
-        }))
+        setResponseData(responseData)
         setCache<TResponse>(apiIdentifier, responseData, cacheExpiry)
       }
     } catch (error: unknown | TError) {
       // if retry is specified, trigger the API call again, until retryTimes is 0
       if (retryTimes && retryTimes > 0) {
         retryTimes--
-        setState((prevState) => ({
-          ...prevState,
-          data: undefined,
-          error: null,
-          isError: false,
-          isLoading: true,
-          isRetrying: true,
-        }))
+        setIsRetrying(true)
         triggerAPI()
       } else {
         const normalError = normalizeError(error)
         onError?.(normalError)
-        setState((prevState) => ({
-          ...prevState,
-          data: undefined,
+        setErrorData({
           error: normalError,
-          isLoading: false,
           isError: true,
-          isRetrying: false,
-        }))
+        })
+        setIsLoading(false)
+        setIsFetching(false)
+        setIsRetrying(false)
       }
     }
   }, [enabled, apiIdentifier])
@@ -151,7 +142,20 @@ const useApi = <TResponse, TData = void, TError = void>({
     triggerAPI()
   }, [triggerAPI])
 
-  return { ...state, triggerApi: refetchAPI }
+  return {
+    data: responseData,
+    isLoading,
+    isFetching,
+    isRetrying,
+    error: errorData.error,
+    isError: errorData.isError,
+    triggerApi: refetchAPI,
+    ...(process.env.NODE_ENV !== 'production'
+      ? {
+          cached,
+        }
+      : {}),
+  }
 }
 
 export { useApi }
