@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useApiContext } from './CacheContext'
 import { areObjectsEqual, createRequest, normalizeError } from './utils'
 import { UseApiResponse, UseApiParams } from './types'
@@ -21,8 +21,6 @@ const {data, isLoading, isError, error} = useApi<ResponseType, PostDataType>({
 })
  */
 
-let interval: ReturnType<typeof setInterval>
-
 const useApi = <TResponse, TData = void, TError = void>({
   apiId,
   apiUrl,
@@ -39,24 +37,23 @@ const useApi = <TResponse, TData = void, TError = void>({
   const { getCache, setCache, baseApiUrl } = useApiContext()
   let retryTimes: number = retry || 0
 
-  const [state, setState] = useState<UseApiResponse<TResponse, TError>>({
+  const [state, setState] = useState<Omit<UseApiResponse<TResponse, TError>, 'triggerApi'>>({
     data: undefined,
     error: null,
     isError: false,
     isLoading: true,
     isRetrying: false,
-    triggerApi: async (): Promise<void> => {},
   })
 
   const finalUrl: string = baseApiUrl ? baseApiUrl + apiUrl : apiUrl
 
-  const apiIdentifier: string = apiId || JSON.stringify({ finalUrl, method, data })
+  const apiIdentifier: string = apiId ?? JSON.stringify({ finalUrl, method, data })
 
   const isCacheOutdated = (cachedData: TResponse, newResponseData: TResponse): boolean => {
     return !areObjectsEqual<TResponse>(cachedData, newResponseData)
   }
 
-  const triggerAPI = async (): Promise<void> => {
+  const triggerAPI = useCallback(async (): Promise<void> => {
     try {
       // check if there is cached response
       const cachedResponse: TResponse = getCache<TResponse>(apiIdentifier)
@@ -134,29 +131,27 @@ const useApi = <TResponse, TData = void, TError = void>({
         }))
       }
     }
-  }
+  }, [enabled, apiIdentifier])
 
   useEffect(() => {
-    setState((prevState) => ({
-      ...prevState,
-      triggerApi: triggerAPI,
-    }))
     if (enabled) {
       triggerAPI()
-      if (pollInterval && pollInterval > 0) {
-        interval = setInterval(triggerAPI, pollInterval)
-      }
     }
+  }, [apiIdentifier, enabled, triggerAPI])
 
-    return () => {
-      if (interval) {
-        clearInterval(interval)
-      }
+  useEffect(() => {
+    if (pollInterval && pollInterval > 0 && enabled) {
+      const interval = setInterval(triggerAPI, pollInterval)
+      return () => clearInterval(interval)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiId, pollInterval])
+    return
+  }, [pollInterval, enabled, triggerAPI])
 
-  return state
+  const refetchAPI = useCallback(() => {
+    triggerAPI()
+  }, [triggerAPI])
+
+  return { ...state, triggerApi: refetchAPI }
 }
 
 export { useApi }

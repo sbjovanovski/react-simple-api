@@ -17,7 +17,7 @@ class ApiCache<T = void> {
 
   setCachedResponse(id: string, data: T, cacheExpiry?: number): T {
     this.apiResponses.set(id, data)
-    if (cacheExpiry) {
+    if (cacheExpiry && cacheExpiry > 0) {
       setTimeout((): void => {
         this.deleteCachedResponse(id)
       }, cacheExpiry)

@@ -12,7 +12,7 @@ interface UseApiResponse<T, TError = void> {
   isError: boolean
   isRetrying: boolean
   error: TError | null
-  triggerApi: () => Promise<void>
+  triggerApi: () => void
 }
 
 interface UseApiParams<TResponse, TData, TError> {
@@ -31,6 +31,7 @@ interface UseApiParams<TResponse, TData, TError> {
    */
   manualTrigger?: boolean
   enabled?: boolean
+  initialData?: TResponse
 }
 
 export { APIMethod, UseApiResponse, UseApiParams }
